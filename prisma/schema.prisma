@@ -14,14 +14,25 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Provider {
+  LOCAL
+  GOOGLE
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String   @db.VarChar(255)
+  id        String   @id @default(uuid())
+  fullName  String   @map("full_name") @db.VarChar(255)
   email     String   @unique @db.VarChar(255)
-  password  String   @db.VarChar(255)
+  password  String?  @db.VarChar(255)
+  provider  Provider @default(LOCAL)
+  role      Role     @default(USER)
   phone     String?  @db.VarChar(20)
   address   String?  @db.Text
-  role      String   @default("customer") @db.VarChar(50)
   createdAt DateTime @default(now()) @map("created_at")
 
   orders    Order[]
@@ -69,7 +80,7 @@ model ProductImage {
 
 model Order {
   id            Int         @id @default(autoincrement())
-  userId        Int         @map("user_id")
+  userId        String      @map("user_id")
   totalAmount   Decimal     @map("total_amount") @db.Decimal(10, 2)
   status        String      @default("PENDING") @db.VarChar(50)
   paymentStatus String      @default("UNPAID") @map("payment_status") @db.VarChar(50)
