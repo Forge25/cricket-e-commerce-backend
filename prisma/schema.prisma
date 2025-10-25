@@ -13,3 +13,98 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(255)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  phone     String?  @db.VarChar(20)
+  address   String?  @db.Text
+  role      String   @default("customer") @db.VarChar(50)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  orders    Order[]
+
+  @@map("users")
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique @db.VarChar(100)
+  description String?   @db.Text
+
+  products    Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          Int              @id @default(autoincrement())
+  name        String           @db.VarChar(255)
+  description String?          @db.Text
+  price       Decimal          @db.Decimal(10, 2)
+  stock       Int
+  categoryId  Int?             @map("category_id")
+  mainImage   String?          @map("main_image") @db.Text
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  category    Category?        @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  images      ProductImage[]
+  orderItems  OrderItem[]
+
+  @@map("products")
+}
+
+model ProductImage {
+  id        Int     @id @default(autoincrement())
+  productId Int     @map("product_id")
+  imageUrl  String  @map("image_url") @db.Text
+
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_images")
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  userId        Int         @map("user_id")
+  totalAmount   Decimal     @map("total_amount") @db.Decimal(10, 2)
+  status        String      @default("PENDING") @db.VarChar(50)
+  paymentStatus String      @default("UNPAID") @map("payment_status") @db.VarChar(50)
+  orderDate     DateTime    @default(now()) @map("order_date")
+
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderItems    OrderItem[]
+  payments      Payment[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int      @map("order_id")
+  productId Int?     @map("product_id")
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
+
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@map("order_items")
+}
+
+model Payment {
+  id            Int       @id @default(autoincrement())
+  orderId       Int       @map("order_id")
+  paymentMethod String?   @map("payment_method") @db.VarChar(50)
+  amount        Decimal   @db.Decimal(10, 2)
+  status        String    @default("PENDING") @db.VarChar(50)
+  transactionId String?   @map("transaction_id") @db.VarChar(255)
+  paidAt        DateTime? @map("paid_at")
+
+  order         Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
